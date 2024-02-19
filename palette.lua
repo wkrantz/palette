@@ -10,9 +10,9 @@ musicutil = require("musicutil")
 local nb = require "nb/lib/nb"
 
 
-mxsamples=include("mx.samples/lib/mx.samples")
-engine.name="MxSamples"
-instruments = {}
+-- mxsamples=include("mx.samples/lib/mx.samples")
+-- engine.name="MxSamples"
+-- instruments = {}
 
 
 g = grid.connect()
@@ -29,21 +29,22 @@ end
 start_x=7
 start_y=5
 
-
 chordname = ""
 momentary_inversion = 0
 momentary_octave = 4
 notes  = {}
+prev_chord = {}
 chord_playing = false
+loading_sequence_step = false
+current_step = 1
 
-steps_in_scale = {0,2,4,5,7,9,11}
 
---scale_shape = [lev1,lev2]
+
 
 function add_params()
-    skeys=mxsamples:new()
-    instruments = skeys:list_instruments()
-    params:add_option("mx_ins", "MX.INSTRUMENT", instruments, 10)
+    -- skeys=mxsamples:new()
+    -- instruments = skeys:list_instruments()
+    -- params:add_option("mx_ins", "MX.INSTRUMENT", instruments, 10)
 
     
     params:add_number("transpose", "Key", 0, 11, 0, function(param) return transpose_string(param:get()) end)
@@ -81,12 +82,20 @@ function init()
     nb:add_param("voice", "voice")
     nb:add_player_params()
 
+    -- set the voice to "resonator"
+    params:set("voice", 8)
 
     grid_dirty = false -- script initializes with no LEDs drawn
     screen_dirty = false
     momentary = {} -- meta-table to track the state of all the grid keys
     basemap = {} -- the background UI to display when no notes are pressed
 
+    
+    seq = {}
+    -- fill with 16 empty steps
+    for i = 1, 16 do
+        seq[i]=false
+    end
 
     for x = 1,16 do -- for each x-column (16 on a 128-sized grid)...
         momentary[x] = {} -- create a table that holds...
@@ -100,6 +109,7 @@ function init()
     draw_basemap()
     redraw()
     clock.run(redraw_clock) -- start the grid redraw clock
+    clock.run(sequencer)
 end
 
 function redraw_clock() -- our grid redraw clock
@@ -117,22 +127,7 @@ function redraw_clock() -- our grid redraw clock
     end
 end
 
-function grid_redraw() -- how we redraw
-    --g:all(0) -- turn off all the LEDs
-    draw_basemap()
-    for x = 1,16 do -- for each column...
-        for y = 1,8 do -- and each row...
-            if momentary[x][y] then -- if the key is held...
-                g:led(x,y,15) -- turn on that LED!
-            else
-                g:led(x,y,basemap[x][y]) -- otherwise, turn it back to the basemap color
-            end
-        end
-    end
-    g:refresh() -- refresh the hardware to display the LED state
 
-    
-end
 
 
 function g.key(x,y,z)  -- define what happens if a grid key is pressed or released
@@ -140,10 +135,11 @@ function g.key(x,y,z)  -- define what happens if a grid key is pressed or releas
         panic()
     end
 
-    
-    momentary[x][y] = z == 1 and (not chord_playing) or false -- if a grid key is pressed, flip it's table entry to 'on'
+    -- if a grid key is pressed AND a chord is not currently being held down, flip it's table entry to 'on'
+    momentary[x][y] = z == 1 and (not chord_playing) or false 
     
 
+    ---- MODIFIERS ---- 
   -- check the basemap to see if we are on a pressable button
     if basemap[x][y] > 0 then
         -- is x between 1 and 3 inclusive, aka the modifier buttons
@@ -162,18 +158,13 @@ function g.key(x,y,z)  -- define what happens if a grid key is pressed or releas
                 momentary_inversion = z == 1 and x-1 or params:get("inversion")
 
             elseif y == 5 then
-
-                if momentary[2][5] then
-                    baseroot = z==1 and baseroot + (4*(x-2)) or baseroot
-                end
-                
-                root = z == 1 and baseroot+(4*(x-2)) or baseroot 
+                -- not sure yet
             end
         end
 
-
+        ---- CHORD BUTTONS ----
         -- are we on the chord buttons?
-        if x >= start_x and x <= start_x+7 then
+        if x >= start_x and x <= start_x+7 and y>=3 then
             -- if releasing the previous chord, then allow to proceed
             if (not chord_playing==false) then
 
@@ -190,20 +181,34 @@ function g.key(x,y,z)  -- define what happens if a grid key is pressed or releas
             end
         end
 
-        
-
-
-  -- what ^that^ did was use an inline condition to assign our momentary state.
-  -- same thing as: if z == 1 then momentary[x][y] = true else momentary[x][y] = false end
         grid_dirty = true -- flag for redraw
     end
+
+
+    ---- SEQUENCER ----
+    if y == 1 and z == 1 then
+
+        -- if already a step, then clear it. If not, then load most recently played chord
+        if seq[x] then
+            seq[x] = false
+        else
+            seq[x] = prev_chord
+        end
+ 
+        grid_dirty = true
+    end
+
 end
 
 
 
 function play_chord(row,degree,z)
+
+    -- if we are letting go of a button, just turn off the current set of notes
     if z == 0 then
         notes_to_engine(notes, z)
+
+    -- if we are pressing a button, figure out the new set of notes
     else
         root = momentary_octave*12 + params:get("transpose")
 
@@ -248,7 +253,10 @@ function play_chord(row,degree,z)
 
         -- sort the notes in ascending order so that a strum will play correctly
         table.sort(notes)
+        
         notes_to_engine(notes, z)
+        
+
         chordname = root + degree
     end
     
@@ -280,37 +288,73 @@ function notes_to_engine(notes, on_or_off)
 
     -- if we just turned off all the notes, then clear the notes table
     if on_or_off == 0 then
+        prev_chord = notes
         notes = {}
     end
 end
 
 
+function sequencer()
+    while true do
+        
+        -- every clock step, play the current step and advance current_step
+        clock.sync(1)
+        -- check to see if the table at the current step is not empty
 
-
-
-
-
-
-function draw_basemap()
-    for x = 1,16 do
-        for y = 1,8 do
-        g:led(x,y,basemap[x][y])
+        -- send off notes from the previous step
+        last_step = current_step == 1 and 16 or current_step - 1
+        if seq[last_step] then
+            notes_to_engine(seq[last_step], 0)
         end
+
+
+        if seq[current_step] then
+            notes_to_engine(seq[current_step], 1)
+        end 
+        current_step = current_step + 1
+        if current_step > 16 then
+            current_step = 1
+        end
+        grid_dirty = true
+        
     end
-    g:refresh()
 end
 
--- function redraw()
---     screen.clear()
 
---     --screen.aa(1)
---     --screen.font_size(10)
---     --screen.move(1,20)
---     --screen.text(chordname)
---     draw_piano(notes)
---     screen.update()
 
--- end
+
+function grid_redraw() -- how we redraw
+    --g:all(0) -- turn off all the LEDs
+    draw_basemap()
+    
+    -- draw the sequencer steps
+
+
+    for x = 1,16 do -- for each column...
+        for y = 1,8 do -- and each row...
+            if momentary[x][y] then -- if the key is held...
+                g:led(x,y,15) -- turn on that LED!
+            else
+                g:led(x,y,basemap[x][y]) -- otherwise, turn it back to the basemap color
+            end
+        end
+    end
+
+    for i = 1, 16 do
+        if seq[i] then
+            g:led(i,1,15)
+        end
+        if i == current_step then
+            g:led(i,1,15)
+        end
+    end
+
+    g:refresh() -- refresh the hardware to display the LED state
+
+    
+end
+
+
 
 function redraw() -------------- redraw() is automatically called by norns
     screen.clear() --------------- clear space
@@ -326,7 +370,6 @@ function redraw() -------------- redraw() is automatically called by norns
     screen.pixel(127, 63) -------- and at the south-eastern
     screen.pixel(0, 63) ---------- and at the south-western
     screen.fill() ---------------- fill the termini and message at once
-
     screen.update() -------------- update space
   end
 

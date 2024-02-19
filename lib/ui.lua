@@ -5,6 +5,13 @@ function make_ui_basemap(x_start, y_start)
     lev2 = 6
     lev3 = 9
 
+    -- sequencer
+    for x = 1, 16 do
+        basemap[x][1] = lev1
+        
+    end
+
+
     -- main keyboard region
     for x = (x_start),(x_start+6) do
         basemap[x][y_start-2] = lev1
@@ -33,6 +40,16 @@ function make_ui_basemap(x_start, y_start)
     basemap[1][8] = lev3
     basemap[2][8] = 1
     basemap[3][8] = lev3
+end
+
+
+function draw_basemap()
+    for x = 1,16 do
+        for y = 1,8 do
+        g:led(x,y,basemap[x][y])
+        end
+    end
+    g:refresh()
 end
 
 
