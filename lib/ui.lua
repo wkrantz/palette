@@ -1,46 +1,5 @@
 ---- GRID UI ----
 
-function make_ui_basemap(x_start, y_start)
-    lev1 = 3
-    lev2 = 6
-    lev3 = 9
-
-    -- sequencer
-    for x = 1, 16 do
-        basemap[x][1] = lev1
-        
-    end
-
-
-    -- main keyboard region
-    for x = (x_start),(x_start+6) do
-        basemap[x][y_start-2] = lev1
-        basemap[x][y_start-1] = lev1
-        basemap[x][y_start] = lev3
-        basemap[x][y_start+1] = lev1
-        basemap[x][y_start+2] = lev1
-
-    end
-
-    -- modifyer area
-
-    -- modulation 
-    basemap[1][5] = lev3
-    basemap[2][5] = 1
-    basemap[3][5] = lev3
-
-
-    -- inversions
-    basemap[1][7] = lev1
-    basemap[2][7] = lev2
-    basemap[3][7] = lev3
-    basemap[4][7] = lev3 + 3
-
-    -- octaves
-    basemap[1][8] = lev3
-    basemap[2][8] = 1
-    basemap[3][8] = lev3
-end
 
 
 function draw_basemap()
@@ -49,7 +8,7 @@ function draw_basemap()
         g:led(x,y,basemap[x][y])
         end
     end
-    g:refresh()
+    --g:refresh()
 end
 
 
