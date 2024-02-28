@@ -1,7 +1,12 @@
--- chord player thing
+-- Palette
+-- v0.1.0 @wayk
 --
+-- E2: Select Root
+-- E3: Select Mode
 --
--- wayk
+-- Paint with chords on the grid
+-- 
+
 
 include('lib/ui')
 include('lib/music_tools')
@@ -39,7 +44,7 @@ current_step = 0
 seq_running=false
 
 
-f
+
 function add_params()
     -- skeys=mxsamples:new()
     -- instruments = skeys:list_instruments()
@@ -51,7 +56,7 @@ function add_params()
     params:add_number('inversion' , 'Inversion', 0, 2, 0)
     params:add_option('bass_note', 'Bass Note', {'no', 'yes'}, 2)
     params:add_number('alt_mode', '2nd Mode', 1, 7, 6, function(param) return mode_index_to_name(param:get()) end)
-    params:add_number('chord2', 'Mod 2', 1, 27, 14, function(param) return get_short_chord_name(param:get()) end)
+    params:add_number('chord2', 'Chord 2', 1, 27, 14, function(param) return get_short_chord_name(param:get()) end)
 
     params:add{
         type = "control",
@@ -68,7 +73,7 @@ function add_params()
       }
 
       params:add_separator('Sequencer')
-      params:add_option('seq_step', 'Step', {0.25,0.5,1}, 3)
+      params:add_option('seq_step', 'Step', {0.125,0.25,0.5,1}, 3)
 
 end
 
@@ -295,13 +300,19 @@ function play_chord(row,degree,z)
             notes[#notes+1] = bass_note
         end
 
-        -- sort the notes in ascending order so that a strum will play correctly
-        table.sort(notes)
-        
+
+        -- table.sort(notes)
+        -- randomize the order of the notes in the chord
+   
+        if params:get("humanize") > 0 then
+            for i = 1, #notes do
+                j = math.random(i, #notes)
+                notes[i], notes[j] = notes[j], notes[i]
+            end
+        end
         notes_to_engine(notes, z)
         
 
-        
     end
     
     screen_dirty = true
@@ -425,8 +436,12 @@ function redraw() -------------- redraw() is automatically called by norns
     screen.font_face(1) ---------- set the font face to "04B_03"
     screen.font_size(16) ---------- set the size to 8
     screen.level(15) ------------- max
-    screen.move(10, 32) ---------- move the pointer to x = 64, y = 32
-    screen.text(Chordname) -- center our message at (64, 32)
+    screen.move(5, 32) ---------- move the pointer to x = 64, y = 32
+    -- if the length or Chordname is longer than 5 characters, reduce the font size and split it at the space into two lines
+    if string.len(Chordname) > 5 then
+        screen.font_size(8)
+    end
+    screen.text(Chordname)
 
     -- draw a little grid map
     readout_x = 64
@@ -436,7 +451,6 @@ function redraw() -------------- redraw() is automatically called by norns
     for x = 1, 7 do
         for y = 0, 4 do
             --absolute value of y-4 times 3
-
             rect(x*rowheight+45, y*rowheight+readout_y-1, 5, 5,2)
         end
     end
