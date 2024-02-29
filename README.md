@@ -1,8 +1,8 @@
 # palette
 
-A palette of chords to paint with
+A palette of chords to paint with.
 
-Requires n.b.
+Requires n.b., can cause issues outputting many simultaneous notes to some voices.
 
 ## Grid
 
@@ -51,8 +51,11 @@ A helpful piano shows the notes you are playing so I can learn something
 ## Parameters
 
 Bass note - toggle a bass note on octave below the root
+
 2nd Mode - Chose the mode for the 2nd row of the palette
+
 Chord 2    - Change the chord type for the 4th row of the palette
+
 Humanize - Play the notes of the chord with a slight random spread of time between them
 
 Sequencer step - Change the sequencer step length in bars

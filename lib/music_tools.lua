@@ -12,10 +12,6 @@ function mode_index_to_name(index)
     return(modes[index])
 end
 
--- function mode_index_to_name(index)
---   local modes = {'Ionian', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian', 'Aeolian', 'Locrian'}
---     return(modes[index])
--- end
 
 
 function get_short_chord_name(n)

@@ -14,9 +14,6 @@ musicutil = require("musicutil")
 
 local nb = require "nb/lib/nb"
 
--- mxsamples=include("mx.samples/lib/mx.samples")
--- engine.name="MxSamples"
--- instruments = {}
 
 
 g = grid.connect()
@@ -46,9 +43,6 @@ seq_running=false
 
 
 function add_params()
-    -- skeys=mxsamples:new()
-    -- instruments = skeys:list_instruments()
-    -- params:add_option("mx_ins", "MX.INSTRUMENT", instruments, 10)
     
     params:add_number("transpose", "Key", 0, 11, 0, function(param) return transpose_string(param:get()) end)
     params:add_number('mode', 'Mode', 1, 7, 1, function(param) return mode_index_to_name(param:get()) end)
@@ -88,8 +82,6 @@ function init()
 
     add_params()
 
-    -- set the voice to "resonator"
-    params:set("voice", 8)
 
     grid_dirty = false -- script initializes with no LEDs drawn
     screen_dirty = false
@@ -111,7 +103,7 @@ function init()
             basemap[x][y] = 0 -- the background UI is 'off'
         end
     end
-    make_ui_basemap(start_x,start_y, params:get("mode"), params:get("alt_mode")) -- populate the basemap table
+    make_ui_basemap(start_x,start_y) -- populate the basemap table
     draw_basemap()
     redraw()
     g:refresh()
@@ -475,10 +467,6 @@ function redraw() -------------- redraw() is automatically called by norns
     screen.text_right(get_short_chord_name(params:get("chord2")))
 
 
-    -- screen.pixel(0, 0) ----------- make a pixel at the north-western most terminus
-    -- screen.pixel(127, 0) --------- and at the north-eastern
-    -- screen.pixel(127, 63) -------- and at the south-eastern
-    -- screen.pixel(0, 63) ---------- and at the south-western
     screen.fill() ---------------- fill the termini and message at once
     screen.update() -------------- update space
   end
@@ -495,79 +483,3 @@ function panic()
     end
 end
 
-
-
-
-function make_ui_basemap(x_start, y_start, mode, alt_mode)
-    lev1 = 3
-    lev2 = 6
-    lev3 = 9
-    lev4 = 12
-
-    -- sequencer
-    for x = 1, 16 do
-        basemap[x][1] = lev1
-        
-    end
-
-    --- sequencer controls
-    basemap[1][2] = lev1
-
-
-
-    -- main keyboard region
-    -- for x = (x_start),(x_start+6) do
-    --     basemap[x][y_start-2] = lev1
-    --     basemap[x][y_start-1] = lev1
-    --     basemap[x][y_start] = lev3
-    --     basemap[x][y_start+1] = lev1
-    --     basemap[x][y_start+2] = lev1
-    --     basemap[x][y_start+3] = lev1
-    -- end
-
-    -- get the first 7 entries of the quality table for the mode
-    modifiers = chord_lookup[mode]["quality"]
-    alt_modifiers = chord_lookup[alt_mode]["quality"]
-    for i = 1, 7 do
-        basemap[x_start+i-1][y_start-2] = lev2
-
-        if modifiers[i] == "" then
-            basemap[x_start+i-1][y_start] = lev4
-
-            basemap[x_start+i-1][y_start+1] = lev2
-            basemap[x_start+i-1][y_start+2] = lev2
-        else
-            basemap[x_start+i-1][y_start] = lev3
-
-            basemap[x_start+i-1][y_start+1] = lev1
-            basemap[x_start+i-1][y_start+2] = lev1
-
-        end
-
-        if alt_modifiers[i] == "" then
-            basemap[x_start+i-1][y_start-1] = lev2
-        else
-            basemap[x_start+i-1][y_start-1] = lev1
-        end
-
-    end
-
-    -- modifyer area
-
-    -- modulation 
-    -- basemap[1][5] = lev3
-    -- basemap[2][5] = 1
-    -- basemap[3][5] = lev3
-
-
-    -- inversions
-    basemap[1][7] = lev1
-    basemap[2][7] = lev2
-    basemap[3][7] = lev3
-    -- basemap[4][7] = lev3 + 3
-
-    -- octaves
-    basemap[1][8] = lev3
-    basemap[2][8] = 1
-    basemap[3][8] = lev3
-end

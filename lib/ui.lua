@@ -1,4 +1,50 @@
 ---- GRID UI ----
+function make_ui_basemap(x_start, y_start)
+    lev1 = 3
+    lev2 = 6
+    lev3 = 9
+    lev4 = 12
+
+    -- sequencer
+    for x = 1, 16 do
+        basemap[x][1] = lev1
+        
+    end
+
+    --- sequencer controls
+    basemap[1][2] = lev1
+
+
+    -- get the first 7 entries of the quality table for the mode
+
+    for i = 1, 7 do
+        basemap[x_start+i-1][y_start-2] = lev1
+        basemap[x_start+i-1][y_start-1] = lev1
+        basemap[x_start+i-1][y_start] = lev3
+        basemap[x_start+i-1][y_start+1] = lev1
+        basemap[x_start+i-1][y_start+2] = lev1
+
+    end
+
+    -- modifyer area
+
+    -- modulation 
+    -- basemap[1][5] = lev3
+    -- basemap[2][5] = 1
+    -- basemap[3][5] = lev3
+
+
+    -- inversions
+    basemap[1][7] = lev1
+    basemap[2][7] = lev2
+    basemap[3][7] = lev3
+    -- basemap[4][7] = lev3 + 3
+
+    -- octaves
+    basemap[1][8] = lev3
+    basemap[2][8] = 1
+    basemap[3][8] = lev3
+end
 
 
 
@@ -54,9 +100,11 @@ function draw_piano(notes)
         end
     end
 
-    
+    -- check to see if we will be off the limits of the keyboard
     if (#notes > 0) and math.min(table.unpack(notes)) < 24 then
             note_offset = 0
+    elseif (#notes > 0) and math.min(table.unpack(notes)) > 56 then
+            note_offset = 47
     else
         note_offset = 23
     end
