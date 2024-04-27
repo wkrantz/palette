@@ -1,3 +1,5 @@
+(a work in progress script for [monome norns](https://monome.org/docs/norns/))
+
 # palette
 
 A palette of chords to paint with.
